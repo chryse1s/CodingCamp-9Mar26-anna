@@ -7,6 +7,9 @@
 class LocalStorageService {
   static TASKS_KEY = 'productivity-dashboard-tasks';
   static LINKS_KEY = 'productivity-dashboard-links';
+  static THEME_KEY = 'dashboard-theme';
+  static USER_NAME_KEY = 'dashboard-user-name';
+  static TIMER_DURATION_KEY = 'dashboard-timer-duration';
 
   static get(key) {
     try {
@@ -43,6 +46,147 @@ class LocalStorageService {
       console.error('Local Storage error:', error);
     }
   }
+
+  // Theme preference methods
+  static getThemePreference() {
+    try {
+      const theme = localStorage.getItem(this.THEME_KEY);
+      return theme === 'dark' ? 'dark' : 'light'; // Default to light if invalid or missing
+    } catch (error) {
+      console.error('Failed to get theme preference:', error);
+      return 'light'; // Fallback to default
+    }
+  }
+
+  static setThemePreference(theme) {
+    try {
+      if (theme === 'light' || theme === 'dark') {
+        localStorage.setItem(this.THEME_KEY, theme);
+      } else {
+        console.warn('Invalid theme preference:', theme);
+      }
+    } catch (error) {
+      console.error('Failed to set theme preference:', error);
+    }
+  }
+
+  // User name methods
+  static getUserName() {
+    try {
+      const name = localStorage.getItem(this.USER_NAME_KEY);
+      return name ? name.trim() : null; // Return null if empty or missing
+    } catch (error) {
+      console.error('Failed to get user name:', error);
+      return null; // Fallback to default
+    }
+  }
+
+  static setUserName(name) {
+    try {
+      if (name && typeof name === 'string' && name.trim().length > 0) {
+        localStorage.setItem(this.USER_NAME_KEY, name.trim());
+      } else {
+        console.warn('Invalid user name:', name);
+      }
+    } catch (error) {
+      console.error('Failed to set user name:', error);
+    }
+  }
+
+  // Timer duration methods
+  static getTimerDuration() {
+    try {
+      const duration = localStorage.getItem(this.TIMER_DURATION_KEY);
+      const parsedDuration = duration ? parseInt(duration, 10) : null;
+      // Validate duration is one of the allowed options
+      if (parsedDuration === 25 || parsedDuration === 30 || parsedDuration === 45) {
+        return parsedDuration;
+      }
+      return 25; // Default to 25 minutes if invalid or missing
+    } catch (error) {
+      console.error('Failed to get timer duration:', error);
+      return 25; // Fallback to default
+    }
+  }
+
+  static setTimerDuration(minutes) {
+    try {
+      // Validate duration is one of the allowed options
+      if (minutes === 25 || minutes === 30 || minutes === 45) {
+        localStorage.setItem(this.TIMER_DURATION_KEY, minutes.toString());
+      } else {
+        console.warn('Invalid timer duration:', minutes);
+      }
+    } catch (error) {
+      console.error('Failed to set timer duration:', error);
+    }
+  }
+}
+
+// Theme Manager Component
+class ThemeManager {
+  constructor() {
+    this.currentTheme = 'light';
+    this.initializeTheme();
+  }
+
+  /**
+   * Get the current theme
+   * @returns {string} Current theme ('light' or 'dark')
+   */
+  getCurrentTheme() {
+    return this.currentTheme;
+  }
+
+  /**
+   * Set a specific theme
+   * @param {string} theme - Theme to set ('light' or 'dark')
+   */
+  setTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') {
+      console.warn(`Invalid theme: ${theme}. Defaulting to light.`);
+      theme = 'light';
+    }
+
+    this.currentTheme = theme;
+    this.applyTheme(theme);
+    LocalStorageService.setThemePreference(theme);
+    
+    // Emit theme change event
+    document.dispatchEvent(new CustomEvent('theme-changed', { 
+      detail: { theme: theme } 
+    }));
+  }
+
+  /**
+   * Toggle between light and dark themes
+   */
+  toggleTheme() {
+    const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+    this.setTheme(newTheme);
+  }
+
+  /**
+   * Initialize theme from localStorage or default to light
+   */
+  initializeTheme() {
+    const savedTheme = LocalStorageService.getThemePreference();
+    this.setTheme(savedTheme);
+  }
+
+  /**
+   * Apply theme by adding/removing CSS classes on document body
+   * @param {string} theme - Theme to apply
+   */
+  applyTheme(theme) {
+    const body = document.body;
+    
+    // Remove existing theme classes
+    body.classList.remove('theme-light', 'theme-dark');
+    
+    // Add new theme class
+    body.classList.add(`theme-${theme}`);
+  }
 }
 
 // Greeting Display Component
@@ -60,11 +204,117 @@ class GreetingDisplay {
         <div class="greeting-text"></div>
         <div class="current-time"></div>
         <div class="current-date"></div>
+        <button class="change-name-btn" title="Change your name" style="display: none;">✏️</button>
       </div>
     `;
 
+    // Check if user needs to provide name on first visit
+    if (!this.getUserName()) {
+      this.promptForName();
+    }
+
+    // Setup change name button
+    const changeNameBtn = this.container.querySelector('.change-name-btn');
+    if (changeNameBtn) {
+      changeNameBtn.addEventListener('click', () => this.promptForName());
+    }
+
     this.updateTime();
     this.intervalId = setInterval(() => this.updateTime(), 1000);
+  }
+
+  getUserName() {
+    return LocalStorageService.getUserName();
+  }
+
+  setUserName(name) {
+    if (name && typeof name === 'string' && name.trim().length > 0) {
+      LocalStorageService.setUserName(name.trim());
+      this.updateTime(); // Refresh greeting display
+      return true;
+    }
+    return false;
+  }
+
+  promptForName() {
+    // Create and show name input dialog
+    const dialog = document.createElement('div');
+    dialog.className = 'name-input-dialog';
+    const isFirstTime = !this.getUserName();
+    const currentName = this.getUserName() || '';
+    
+    dialog.innerHTML = `
+      <div class="dialog-overlay">
+        <div class="dialog-content">
+          <h3>${isFirstTime ? 'Welcome to Your Productivity Dashboard!' : 'Change Your Name'}</h3>
+          <p>${isFirstTime ? 'What would you like to be called?' : 'Enter your new name:'}</p>
+          <div class="input-group">
+            <input type="text" id="name-input" placeholder="Enter your name" maxlength="50" value="${currentName}" />
+            <div class="error-message" id="name-error"></div>
+          </div>
+          <div class="dialog-buttons">
+            <button id="save-name-btn" class="btn-primary">Save</button>
+            ${isFirstTime ? '<button id="skip-name-btn" class="btn-secondary">Skip</button>' : '<button id="cancel-name-btn" class="btn-secondary">Cancel</button>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    const nameInput = dialog.querySelector('#name-input');
+    const saveBtn = dialog.querySelector('#save-name-btn');
+    const skipBtn = dialog.querySelector('#skip-name-btn');
+    const cancelBtn = dialog.querySelector('#cancel-name-btn');
+    const errorMsg = dialog.querySelector('#name-error');
+
+    // Focus on input and select existing text if any
+    nameInput.focus();
+    if (currentName) {
+      nameInput.select();
+    }
+
+    // Handle save button click
+    const handleSave = () => {
+      const name = nameInput.value.trim();
+      if (name.length === 0) {
+        errorMsg.textContent = isFirstTime ? 'Please enter a name or click Skip' : 'Please enter a name or click Cancel';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      if (this.setUserName(name)) {
+        document.body.removeChild(dialog);
+      } else {
+        errorMsg.textContent = 'Please enter a valid name';
+        errorMsg.style.display = 'block';
+      }
+    };
+
+    // Handle skip/cancel button click
+    const handleSkipOrCancel = () => {
+      document.body.removeChild(dialog);
+    };
+
+    // Event listeners
+    saveBtn.addEventListener('click', handleSave);
+    if (skipBtn) skipBtn.addEventListener('click', handleSkipOrCancel);
+    if (cancelBtn) cancelBtn.addEventListener('click', handleSkipOrCancel);
+
+    // Handle Enter key
+    nameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSave();
+      }
+    });
+
+    // Handle Escape key
+    document.addEventListener('keydown', function escapeHandler(e) {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', escapeHandler);
+        handleSkipOrCancel();
+      }
+    });
   }
 
   updateTime() {
@@ -72,8 +322,18 @@ class GreetingDisplay {
     const greetingText = this.container.querySelector('.greeting-text');
     const currentTime = this.container.querySelector('.current-time');
     const currentDate = this.container.querySelector('.current-date');
+    const changeNameBtn = this.container.querySelector('.change-name-btn');
 
-    if (greetingText) greetingText.textContent = this.getGreeting(now.getHours());
+    if (greetingText) {
+      const userName = this.getUserName();
+      const baseGreeting = this.getGreeting(now.getHours());
+      greetingText.textContent = userName ? `${baseGreeting}, ${userName}` : baseGreeting;
+      
+      // Show/hide change name button based on whether name exists
+      if (changeNameBtn) {
+        changeNameBtn.style.display = userName ? 'inline-block' : 'none';
+      }
+    }
     if (currentTime) currentTime.textContent = this.formatTime(now);
     if (currentDate) currentDate.textContent = this.formatDate(now);
   }
@@ -82,13 +342,13 @@ class GreetingDisplay {
     let hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
-    
+
     hours = hours % 12;
     hours = hours ? hours : 12; // 0 should be 12
-    
+
     const hoursStr = hours.toString().padStart(2, '0');
     const minutesStr = minutes.toString().padStart(2, '0');
-    
+
     return `${hoursStr}:${minutesStr} ${ampm}`;
   }
 
@@ -96,23 +356,23 @@ class GreetingDisplay {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December'];
-    
+
     const dayName = days[date.getDay()];
     const monthName = months[date.getMonth()];
     const dayNumber = date.getDate();
-    
+
     return `${dayName}, ${monthName} ${dayNumber}`;
   }
 
   getGreeting(hour) {
     if (hour >= 5 && hour <= 11) {
-      return 'Good Morning';
+      return '🌻 Good Morning';
     } else if (hour >= 12 && hour <= 16) {
-      return 'Good Afternoon';
+      return '🌷 Good Afternoon';
     } else if (hour >= 17 && hour <= 20) {
-      return 'Good Evening';
+      return '🌼 Good Evening';
     } else {
-      return 'Good Night';
+      return '🌙 Good Night';
     }
   }
 
@@ -124,11 +384,13 @@ class GreetingDisplay {
   }
 }
 
+
 // Focus Timer Component
 class FocusTimer {
   constructor(container) {
     this.container = container;
-    this.remainingSeconds = 1500; // 25 minutes
+    this.duration = LocalStorageService.getTimerDuration(); // Get saved duration or default to 25
+    this.remainingSeconds = this.duration * 60; // Convert minutes to seconds
     this.isRunning = false;
     this.intervalId = null;
   }
@@ -138,7 +400,15 @@ class FocusTimer {
 
     this.container.innerHTML = `
       <div class="focus-timer">
-        <div class="timer-display">25:00</div>
+        <div class="timer-display">${this.formatTime(this.remainingSeconds)}</div>
+        <div class="duration-selector">
+          <label for="duration-select">Duration:</label>
+          <select id="duration-select" class="duration-select" aria-label="Select timer duration">
+            <option value="25" ${this.duration === 25 ? 'selected' : ''}>25 minutes</option>
+            <option value="30" ${this.duration === 30 ? 'selected' : ''}>30 minutes</option>
+            <option value="45" ${this.duration === 45 ? 'selected' : ''}>45 minutes</option>
+          </select>
+        </div>
         <div class="timer-controls">
           <button class="btn-start">Start</button>
           <button class="btn-stop">Stop</button>
@@ -155,22 +425,48 @@ class FocusTimer {
     const startBtn = this.container.querySelector('.btn-start');
     const stopBtn = this.container.querySelector('.btn-stop');
     const resetBtn = this.container.querySelector('.btn-reset');
+    const durationSelect = this.container.querySelector('.duration-select');
 
     if (startBtn) startBtn.addEventListener('click', () => this.start());
     if (stopBtn) stopBtn.addEventListener('click', () => this.stop());
     if (resetBtn) resetBtn.addEventListener('click', () => this.reset());
+    if (durationSelect) durationSelect.addEventListener('change', (e) => this.setDuration(parseInt(e.target.value)));
+  }
+
+  getDuration() {
+    return this.duration;
+  }
+
+  setDuration(minutes) {
+    // Validate duration is one of the allowed options
+    if (minutes === 25 || minutes === 30 || minutes === 45) {
+      this.duration = minutes;
+      LocalStorageService.setTimerDuration(minutes);
+
+      // If timer is not running, update the remaining seconds to new duration
+      if (!this.isRunning) {
+        this.remainingSeconds = this.duration * 60;
+        this.render();
+      }
+
+      // Update the dropdown selection
+      const durationSelect = this.container.querySelector('.duration-select');
+      if (durationSelect) {
+        durationSelect.value = minutes.toString();
+      }
+    }
   }
 
   start() {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.intervalId = setInterval(() => this.tick(), 1000);
   }
 
   stop() {
     if (!this.isRunning) return;
-    
+
     this.isRunning = false;
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -180,7 +476,7 @@ class FocusTimer {
 
   reset() {
     this.stop();
-    this.remainingSeconds = 1500;
+    this.remainingSeconds = this.duration * 60; // Reset to currently selected duration
     this.render();
   }
 
@@ -189,7 +485,7 @@ class FocusTimer {
       this.remainingSeconds--;
       this.render();
     }
-    
+
     if (this.remainingSeconds === 0) {
       this.stop();
     }
@@ -212,6 +508,7 @@ class FocusTimer {
     this.stop();
   }
 }
+
 
 // Task List Component
 class TaskList {
@@ -252,7 +549,7 @@ class TaskList {
   }
 
   generateId() {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    return Date.now().toString() + Math.random().toString(36).substring(2, 11);
   }
 
   loadTasks() {
@@ -442,7 +739,7 @@ class QuickLinksManager {
   }
 
   generateId() {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    return Date.now().toString() + Math.random().toString(36).substring(2, 11);
   }
 
   loadLinks() {
@@ -535,9 +832,16 @@ class QuickLinksManager {
 class App {
   constructor() {
     this.components = [];
+    this.themeManager = null;
   }
 
   init() {
+    // Initialize ThemeManager first
+    this.themeManager = new ThemeManager();
+    
+    // Setup theme toggle button
+    this.setupThemeToggle();
+    
     // Initialize all components
     const greetingContainer = document.getElementById('greeting-display');
     const timerContainer = document.getElementById('focus-timer');
@@ -569,6 +873,38 @@ class App {
     }
   }
 
+  setupThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      // Set initial icon based on current theme
+      this.updateThemeIcon();
+      
+      // Add click event listener
+      themeToggle.addEventListener('click', () => {
+        this.themeManager.toggleTheme();
+      });
+      
+      // Listen for theme changes to update icon
+      document.addEventListener('theme-changed', () => {
+        this.updateThemeIcon();
+      });
+    }
+  }
+
+  updateThemeIcon() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle?.querySelector('.theme-icon');
+    
+    if (themeIcon) {
+      const currentTheme = this.themeManager.getCurrentTheme();
+      // Show moon for light theme (click to go dark), sun for dark theme (click to go light)
+      themeIcon.textContent = currentTheme === 'light' ? '🌙' : '☀️';
+      themeToggle.setAttribute('aria-label', 
+        currentTheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'
+      );
+    }
+  }
+
   destroy() {
     this.components.forEach(component => {
       if (component.destroy) {
@@ -576,6 +912,7 @@ class App {
       }
     });
     this.components = [];
+    this.themeManager = null;
   }
 }
 

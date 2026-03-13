@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integration Test - Productivity Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .test-results {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: white;
+      border: 2px solid #333;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 300px;
+      z-index: 9999;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .test-pass { color: green; }
+    .test-fail { color: red; }
+    .test-info { color: blue; }
+  </style>
+</head>
+<body>
+  <div class="test-results" id="test-results">
+    <h4>Integration Test Results</h4>
+    <div id="test-output"></div>
+  </div>
+
+  <header>
+    <h1>Productivity Dashboard</h1>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </header>
+  
+  <main>
+    <section id="greeting-display" class="component">
+      <div class="greeting-display">
+        <div class="greeting-text">Good Morning</div>
+        <div class="current-time">12:00 PM</div>
+        <div class="current-date">Loading...</div>
+      </div>
+    </section>
+    
+    <section id="focus-timer" class="component">
+      <div class="focus-timer">
+        <div class="timer-display">25:00</div>
+        <div class="duration-selector">
+          <label for="duration-select">Duration:</label>
+          <select id="duration-select" class="duration-select" aria-label="Select timer duration">
+            <option value="25">25 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+          </select>
+        </div>
+        <div class="timer-controls">
+          <button class="btn-start">Start</button>
+          <button class="btn-stop">Stop</button>
+          <button class="btn-reset">Reset</button>
+        </div>
+      </div>
+    </section>
+    
+    <section id="task-list" class="component">
+      <div class="task-list">
+        <div class="task-input-container">
+          <input type="text" class="task-input" placeholder="Add a new task...">
+          <button class="btn-add-task">Add</button>
+        </div>
+        <ul class="tasks">
+          <!-- Tasks will be dynamically added here -->
+        </ul>
+      </div>
+    </section>
+    
+    <section id="quick-links-manager" class="component">
+      <div class="quick-links-manager">
+        <div class="link-input-container">
+          <input type="text" class="link-name-input" placeholder="Link name">
+          <input type="url" class="link-url-input" placeholder="https://example.com">
+          <button class="btn-add-link">Add Link</button>
+        </div>
+        <div class="links">
+          <!-- Links will be dynamically added here -->
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <script src="js/app.js"></script>
+  <script>
+    // Integration test script
+    function runIntegrationTests() {
+      const output = document.getElementById('test-output');
+      const results = [];
+      
+      function log(message, type = 'info') {
+        results.push(`<div class="test-${type}">${message}</div>`);
+        output.innerHTML = results.join('');
+      }
+      
+      log('Starting integration tests...', 'info');
+      
+      // Test 1: Theme toggle functionality
+      try {
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        if (themeToggle) {
+          log('✓ Theme toggle button found', 'pass');
+          
+          // Test theme switching
+          const initialTheme = body.classList.contains('theme-dark') ? 'dark' : 'light';
+          themeToggle.click();
+          
+          setTimeout(() => {
+            const newTheme = body.classList.contains('theme-dark') ? 'dark' : 'light';
+            if (newTheme !== initialTheme) {
+              log('✓ Theme toggle works', 'pass');
+            } else {
+              log('✗ Theme toggle failed', 'fail');
+            }
+          }, 100);
+        } else {
+          log('✗ Theme toggle button not found', 'fail');
+        }
+      } catch (error) {
+        log(`✗ Theme test error: ${error.message}`, 'fail');
+      }
+      
+      // Test 2: LocalStorage service availability
+      try {
+        if (typeof LocalStorageService !== 'undefined') {
+          log('✓ LocalStorageService available', 'pass');
+          
+          // Test theme preference methods
+          if (typeof LocalStorageService.getThemePreference === 'function' &&
+              typeof LocalStorageService.setThemePreference === 'function') {
+            log('✓ Theme preference methods available', 'pass');
+          } else {
+            log('✗ Theme preference methods missing', 'fail');
+          }
+          
+          // Test user name methods
+          if (typeof LocalStorageService.getUserName === 'function' &&
+              typeof LocalStorageService.setUserName === 'function') {
+            log('✓ User name methods available', 'pass');
+          } else {
+            log('✗ User name methods missing', 'fail');
+          }
+          
+          // Test timer duration methods
+          if (typeof LocalStorageService.getTimerDuration === 'function' &&
+              typeof LocalStorageService.setTimerDuration === 'function') {
+            log('✓ Timer duration methods available', 'pass');
+          } else {
+            log('✗ Timer duration methods missing', 'fail');
+          }
+        } else {
+          log('✗ LocalStorageService not available', 'fail');
+        }
+      } catch (error) {
+        log(`✗ LocalStorage test error: ${error.message}`, 'fail');
+      }
+      
+      // Test 3: Timer component functionality
+      try {
+        const timerDisplay = document.querySelector('.timer-display');
+        const startBtn = document.querySelector('.btn-start');
+        const stopBtn = document.querySelector('.btn-stop');
+        const resetBtn = document.querySelector('.btn-reset');
+        
+        if (timerDisplay && startBtn && stopBtn && resetBtn) {
+          log('✓ Timer components found', 'pass');
+          
+          // Check if timer display shows valid time format
+          const timePattern = /^\d{1,2}:\d{2}$/;
+          if (timePattern.test(timerDisplay.textContent.trim())) {
+            log('✓ Timer display format valid', 'pass');
+          } else {
+            log('✗ Timer display format invalid', 'fail');
+          }
+        } else {
+          log('✗ Timer components missing', 'fail');
+        }
+      } catch (error) {
+        log(`✗ Timer test error: ${error.message}`, 'fail');
+      }
+      
+      // Test 4: Greeting component
+      try {
+        const greetingText = document.querySelector('.greeting-text');
+        const currentTime = document.querySelector('.current-time');
+        const currentDate = document.querySelector('.current-date');
+        
+        if (greetingText && currentTime && currentDate) {
+          log('✓ Greeting components found', 'pass');
+          
+          // Check if greeting text is not empty
+          if (greetingText.textContent.trim().length > 0) {
+            log('✓ Greeting text populated', 'pass');
+          } else {
+            log('✗ Greeting text empty', 'fail');
+          }
+        } else {
+          log('✗ Greeting components missing', 'fail');
+        }
+      } catch (error) {
+        log(`✗ Greeting test error: ${error.message}`, 'fail');
+      }
+      
+      // Test 5: CSS theme variables
+      try {
+        const computedStyle = getComputedStyle(document.body);
+        const bgGradientStart = computedStyle.getPropertyValue('--bg-gradient-start');
+        const textPrimary = computedStyle.getPropertyValue('--text-primary');
+        
+        if (bgGradientStart && textPrimary) {
+          log('✓ CSS theme variables available', 'pass');
+        } else {
+          log('✗ CSS theme variables missing', 'fail');
+        }
+      } catch (error) {
+        log(`✗ CSS variables test error: ${error.message}`, 'fail');
+      }
+      
+      // Test 6: Task and link components
+      try {
+        const taskInput = document.querySelector('.task-input');
+        const addTaskBtn = document.querySelector('.btn-add-task');
+        const linkNameInput = document.querySelector('.link-name-input');
+        const linkUrlInput = document.querySelector('.link-url-input');
+        const addLinkBtn = document.querySelector('.btn-add-link');
+        
+        if (taskInput && addTaskBtn && linkNameInput && linkUrlInput && addLinkBtn) {
+          log('✓ Task and link components found', 'pass');
+        } else {
+          log('✗ Task and link components missing', 'fail');
+        }
+      } catch (error) {
+        log(`✗ Components test error: ${error.message}`, 'fail');
+      }
+      
+      log('Integration tests completed!', 'info');
+    }
+    
+    // Run tests after page loads
+    window.addEventListener('load', () => {
+      setTimeout(runIntegrationTests, 1000);
+    });
+  </script>
+</body>
+</html>

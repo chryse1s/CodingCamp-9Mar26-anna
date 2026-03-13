@@ -3,10 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Productivity Dashboard</title>
+  <title>Final Checkpoint - Productivity Dashboard</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .validation-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: var(--bg-component);
+      border: 2px solid var(--border-color);
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 350px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 9999;
+      font-family: monospace;
+      font-size: 12px;
+      box-shadow: 0 4px 12px var(--shadow-component);
+    }
+    .test-pass { color: #27ae60; font-weight: bold; }
+    .test-fail { color: #e74c3c; font-weight: bold; }
+    .test-info { color: var(--text-primary); }
+    .validation-header {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: var(--text-accent);
+    }
+    .test-summary {
+      background: var(--bg-timer-display);
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+  </style>
 </head>
 <body>
+  <div class="validation-panel" id="validation-panel">
+    <div class="validation-header">🔍 Final Checkpoint Validation</div>
+    <div id="validation-output">Initializing tests...</div>
+  </div>
+
   <header>
     <h1>Productivity Dashboard</h1>
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
@@ -41,33 +79,9 @@
         </div>
       </div>
     </section>
-    
-    <section id="task-list" class="component">
-      <div class="task-list">
-        <div class="task-input-container">
-          <input type="text" class="task-input" placeholder="Add a new task...">
-          <button class="btn-add-task">Add</button>
-        </div>
-        <ul class="tasks">
-          <!-- Tasks will be dynamically added here -->
-        </ul>
-      </div>
-    </section>
-    
-    <section id="quick-links-manager" class="component">
-      <div class="quick-links-manager">
-        <div class="link-input-container">
-          <input type="text" class="link-name-input" placeholder="Link name">
-          <input type="url" class="link-url-input" placeholder="https://example.com">
-          <button class="btn-add-link">Add Link</button>
-        </div>
-        <div class="links">
-          <!-- Links will be dynamically added here -->
-        </div>
-      </div>
-    </section>
   </main>
   
   <script src="js/app.js"></script>
+  <script src="js/validate-integration.js"></script>
 </body>
 </html>
