@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productivity Dashboard - Workflow Test</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-section h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 3px;
+    }
+    .test-pass {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .test-fail {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .test-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Productivity Dashboard - Workflow Testing</h1>
+  </header>
+  
+  <div class="test-section">
+    <h3>Automated Workflow Tests</h3>
+    <div id="test-results"></div>
+    <button onclick="runAllTests()">Run All Tests</button>
+  </div>
+
+  <main>
+    <section id="greeting-display" class="component">
+      <!-- Will be populated by GreetingDisplay component -->
+    </section>
+    
+    <section id="focus-timer" class="component">
+      <!-- Will be populated by FocusTimer component -->
+    </section>
+    
+    <section id="task-list" class="component">
+      <!-- Will be populated by TaskList component -->
+    </section>
+    
+    <section id="quick-links-manager" class="component">
+      <!-- Will be populated by QuickLinksManager component -->
+    </section>
+  </main>
+  
+  <script src="js/app.js"></script>
+  <script>
+    // Test utilities
+    function logTest(name, passed, message) {
+      const resultsDiv = document.getElementById('test-results');
+      const testDiv = document.createElement('div');
+      testDiv.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+      testDiv.innerHTML = `<strong>${name}:</strong> ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+      resultsDiv.appendChild(testDiv);
+    }
+
+    function logInfo(message) {
+      const resultsDiv = document.getElementById('test-results');
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'test-result test-info';
+      infoDiv.innerHTML = `<strong>INFO:</strong> ${message}`;
+      resultsDiv.appendChild(infoDiv);
+    }
+
+    // Wait for components to initialize
+    function waitForInit() {
+      return new Promise(resolve => {
+        setTimeout(resolve, 100);
+      });
+    }
+
+    async function runAllTests() {
+      const resultsDiv = document.getElementById('test-results');
+      resultsDiv.innerHTML = '';
+      
+      logInfo('Starting workflow tests...');
+      
+      // Clear localStorage before tests
+      localStorage.clear();
+      
+      await waitForInit();
+      
+      // Test 1: Component Initialization
+      await testComponentInitialization();
+      
+      // Test 2: Task Workflows
+      await testTaskWorkflows();
+      
+      // Test 3: Link Workflows
+      await testLinkWorkflows();
+      
+      // Test 4: Timer Workflows
+      await testTimerWorkflows();
+      
+      // Test 5: Data Persistence
+      await testDataPersistence();
+      
+      logInfo('All tests completed!');
+    }
+
+    async function testComponentInitialization() {
+      logInfo('Testing component initialization...');
+      
+      // Test greeting display
+      const greetingDisplay = document.querySelector('#greeting-display .greeting-display');
+      logTest('Greeting Display DOM', !!greetingDisplay, greetingDisplay ? 'Component DOM created' : 'Component DOM missing');
+      
+      const greetingText = document.querySelector('#greeting-display .greeting-text');
+      const currentTime = document.querySelector('#greeting-display .current-time');
+      const currentDate = document.querySelector('#greeting-display .current-date');
+      
+      logTest('Greeting Elements', !!(greetingText && currentTime && currentDate), 
+        'Greeting, time, and date elements present');
+      
+      // Test timer
+      const timerDisplay = document.querySelector('#focus-timer .timer-display');
+      const timerControls = document.querySelector('#focus-timer .timer-controls');
+      logTest('Timer Components', !!(timerDisplay && timerControls), 'Timer display and controls present');
+      
+      // Test task list
+      const taskInput = document.querySelector('#task-list .task-input');
+      const addTaskBtn = document.querySelector('#task-list .btn-add-task');
+      const tasksList = document.querySelector('#task-list .tasks');
+      logTest('Task List Components', !!(taskInput && addTaskBtn && tasksList), 'Task input, button, and list present');
+      
+      // Test quick links
+      const linkNameInput = document.querySelector('#quick-links-manager .link-name-input');
+      const linkUrlInput = document.querySelector('#quick-links-manager .link-url-input');
+      const addLinkBtn = document.querySelector('#quick-links-manager .btn-add-link');
+      const linksContainer = document.querySelector('#quick-links-manager .links');
+      logTest('Quick Links Components', !!(linkNameInput && linkUrlInput && addLinkBtn && linksContainer), 
+        'Link inputs, button, and container present');
+    }
+
+    async function testTaskWorkflows() {
+      logInfo('Testing task workflows...');
+      
+      // Test add task
+      const taskInput = document.querySelector('#task-list .task-input');
+      const addTaskBtn = document.querySelector('#task-list .btn-add-task');
+      
+      taskInput.value = 'Test Task 1';
+      addTaskBtn.click();
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      let taskItems = document.querySelectorAll('#task-list .task-item');
+      logTest('Add Task', taskItems.length === 1, `Expected 1 task, found ${taskItems.length}`);
+      
+      // Test task completion
+      if (taskItems.length > 0) {
+        const checkbox = taskItems[0].querySelector('.task-checkbox');
+        checkbox.click();
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        const isCompleted = checkbox.checked;
+        logTest('Complete Task', isCompleted, isCompleted ? 'Task marked as completed' : 'Task not completed');
+      }
+      
+      // Test add another task
+      taskInput.value = 'Test Task 2';
+      addTaskBtn.click();
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      taskItems = document.querySelectorAll('#task-list .task-item');
+      logTest('Add Second Task', taskItems.length === 2, `Expected 2 tasks, found ${taskItems.length}`);
+      
+      // Test delete task
+      if (taskItems.length > 0) {
+        const deleteBtn = taskItems[0].querySelector('.btn-delete-task');
+        deleteBtn.click();
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        taskItems = document.querySelectorAll('#task-list .task-item');
+        logTest('Delete Task', taskItems.length === 1, `Expected 1 task after deletion, found ${taskItems.length}`);
+      }
+    }
+
+    async function testLinkWorkflows() {
+      logInfo('Testing link workflows...');
+      
+      // Test add link
+      const nameInput = document.querySelector('#quick-links-manager .link-name-input');
+      const urlInput = document.querySelector('#quick-links-manager .link-url-input');
+      const addLinkBtn = document.querySelector('#quick-links-manager .btn-add-link');
+      
+      nameInput.value = 'Google';
+      urlInput.value = 'https://google.com';
+      addLinkBtn.click();
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      let linkItems = document.querySelectorAll('#quick-links-manager .link-item');
+      logTest('Add Link', linkItems.length === 1, `Expected 1 link, found ${linkItems.length}`);
+      
+      // Test link properties
+      if (linkItems.length > 0) {
+        const linkButton = linkItems[0].querySelector('.link-button');
+        const hasCorrectText = linkButton && linkButton.textContent === 'Google';
+        const hasCorrectUrl = linkButton && linkButton.href === 'https://google.com/';
+        const hasTargetBlank = linkButton && linkButton.target === '_blank';
+        
+        logTest('Link Properties', hasCorrectText && hasCorrectUrl && hasTargetBlank, 
+          'Link has correct text, URL, and target="_blank"');
+      }
+      
+      // Test add another link
+      nameInput.value = 'GitHub';
+      urlInput.value = 'https://github.com';
+      addLinkBtn.click();
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      linkItems = document.querySelectorAll('#quick-links-manager .link-item');
+      logTest('Add Second Link', linkItems.length === 2, `Expected 2 links, found ${linkItems.length}`);
+      
+      // Test delete link
+      if (linkItems.length > 0) {
+        const deleteBtn = linkItems[0].querySelector('.btn-delete-link');
+        deleteBtn.click();
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        linkItems = document.querySelectorAll('#quick-links-manager .link-item');
+        logTest('Delete Link', linkItems.length === 1, `Expected 1 link after deletion, found ${linkItems.length}`);
+      }
+    }
+
+    async function testTimerWorkflows() {
+      logInfo('Testing timer workflows...');
+      
+      const timerDisplay = document.querySelector('#focus-timer .timer-display');
+      const startBtn = document.querySelector('#focus-timer .btn-start');
+      const stopBtn = document.querySelector('#focus-timer .btn-stop');
+      const resetBtn = document.querySelector('#focus-timer .btn-reset');
+      
+      // Test initial state
+      const initialDisplay = timerDisplay.textContent;
+      logTest('Timer Initial State', initialDisplay === '25:00', `Expected "25:00", found "${initialDisplay}"`);
+      
+      // Test start timer
+      startBtn.click();
+      await new Promise(resolve => setTimeout(resolve, 1100)); // Wait for at least one tick
+      
+      const afterStartDisplay = timerDisplay.textContent;
+      const timerStarted = afterStartDisplay !== '25:00';
+      logTest('Timer Start', timerStarted, timerStarted ? `Timer counting down: ${afterStartDisplay}` : 'Timer not started');
+      
+      // Test stop timer
+      stopBtn.click();
+      const stoppedDisplay = timerDisplay.textContent;
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      const afterStopDisplay = timerDisplay.textContent;
+      
+      logTest('Timer Stop', stoppedDisplay === afterStopDisplay, 
+        stoppedDisplay === afterStopDisplay ? 'Timer stopped (time preserved)' : 'Timer continued running');
+      
+      // Test reset timer
+      resetBtn.click();
+      const resetDisplay = timerDisplay.textContent;
+      logTest('Timer Reset', resetDisplay === '25:00', `Expected "25:00" after reset, found "${resetDisplay}"`);
+    }
+
+    async function testDataPersistence() {
+      logInfo('Testing data persistence...');
+      
+      // Check if tasks are in localStorage
+      const storedTasks = localStorage.getItem('productivity-dashboard-tasks');
+      logTest('Task Persistence', !!storedTasks, storedTasks ? 'Tasks saved to localStorage' : 'No tasks in localStorage');
+      
+      // Check if links are in localStorage
+      const storedLinks = localStorage.getItem('productivity-dashboard-links');
+      logTest('Link Persistence', !!storedLinks, storedLinks ? 'Links saved to localStorage' : 'No links in localStorage');
+      
+      // Test data format
+      if (storedTasks) {
+        try {
+          const tasks = JSON.parse(storedTasks);
+          const isValidFormat = Array.isArray(tasks) && 
+            (tasks.length === 0 || (tasks[0].id && tasks[0].text !== undefined && tasks[0].completed !== undefined));
+          logTest('Task Data Format', isValidFormat, isValidFormat ? 'Task data format is valid' : 'Invalid task data format');
+        } catch (e) {
+          logTest('Task Data Format', false, 'Failed to parse task data');
+        }
+      }
+      
+      if (storedLinks) {
+        try {
+          const links = JSON.parse(storedLinks);
+          const isValidFormat = Array.isArray(links) && 
+            (links.length === 0 || (links[0].id && links[0].name && links[0].url));
+          logTest('Link Data Format', isValidFormat, isValidFormat ? 'Link data format is valid' : 'Invalid link data format');
+        } catch (e) {
+          logTest('Link Data Format', false, 'Failed to parse link data');
+        }
+      }
+    }
+
+    // Auto-run tests after page load
+    window.addEventListener('load', () => {
+      setTimeout(runAllTests, 500);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Testing - Productivity Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .performance-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 1000;
+      min-width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .performance-panel h3 {
+      margin: 0 0 10px 0;
+      color: #4CAF50;
+    }
+    
+    .metric {
+      margin: 5px 0;
+      padding: 3px 0;
+      border-bottom: 1px solid #333;
+    }
+    
+    .metric.pass {
+      color: #4CAF50;
+    }
+    
+    .metric.fail {
+      color: #f44336;
+    }
+    
+    .metric.warning {
+      color: #ff9800;
+    }
+    
+    .test-controls {
+      margin: 15px 0;
+      text-align: center;
+    }
+    
+    .test-controls button {
+      margin: 5px;
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .test-controls button:hover {
+      background: #5568d3;
+    }
+    
+    .instructions {
+      background: #f0f8ff;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .instructions h2 {
+      color: #667eea;
+      margin-top: 0;
+    }
+    
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .instructions li {
+      margin: 8px 0;
+    }
+    
+    .highlight {
+      background: yellow !important;
+      transition: background 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="performance-panel">
+    <h3>Performance Monitor</h3>
+    <div id="performance-metrics"></div>
+    <div class="test-controls">
+      <button onclick="runAutomatedTests()">Run Automated Tests</button>
+      <button onclick="clearMetrics()">Clear Metrics</button>
+      <button onclick="toggleMonitoring()">Toggle Monitoring</button>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h2>Performance Testing Instructions</h2>
+    <p><strong>Requirements:</strong> All user interactions must provide visual feedback within 100ms (Requirements 13.1-13.4)</p>
+    
+    <h3>Manual Testing Procedure:</h3>
+    <ol>
+      <li><strong>Open Browser DevTools:</strong> Press F12 and go to the Performance tab</li>
+      <li><strong>Start Recording:</strong> Click the record button in DevTools Performance tab</li>
+      <li><strong>Test User Interactions:</strong>
+        <ul>
+          <li>Click buttons (Start/Stop/Reset timer, Add Task, Add Link)</li>
+          <li>Type in input fields</li>
+          <li>Toggle task checkboxes</li>
+          <li>Click edit/delete buttons</li>
+        </ul>
+      </li>
+      <li><strong>Stop Recording:</strong> Click stop in DevTools after testing</li>
+      <li><strong>Analyze Results:</strong> Look for Main Thread activity and measure time from user input to visual update</li>
+    </ol>
+    
+    <h3>Automated Testing:</h3>
+    <p>Click "Run Automated Tests" to measure response times programmatically. The performance monitor will show results in real-time.</p>
+    
+    <h3>Performance Thresholds:</h3>
+    <ul>
+      <li><span style="color: #4CAF50;">✓ PASS:</span> Response time ≤ 100ms</li>
+      <li><span style="color: #ff9800;">⚠ WARNING:</span> Response time 100-150ms</li>
+      <li><span style="color: #f44336;">✗ FAIL:</span> Response time > 150ms</li>
+    </ul>
+  </div>
+
+  <header>
+    <h1>Productivity Dashboard - Performance Testing</h1>
+  </header>
+  
+  <main>
+    <section id="greeting-display" class="component">
+      <div class="greeting-display">
+        <div class="greeting-text">Good Morning</div>
+        <div class="current-time">12:00 PM</div>
+        <div class="current-date">Loading...</div>
+      </div>
+    </section>
+    
+    <section id="focus-timer" class="component">
+      <div class="focus-timer">
+        <div class="timer-display">25:00</div>
+        <div class="timer-controls">
+          <button class="btn-start">Start</button>
+          <button class="btn-stop">Stop</button>
+          <button class="btn-reset">Reset</button>
+        </div>
+      </div>
+    </section>
+    
+    <section id="task-list" class="component">
+      <div class="task-list">
+        <div class="task-input-container">
+          <input type="text" class="task-input" placeholder="Add a new task...">
+          <button class="btn-add-task">Add</button>
+        </div>
+        <ul class="tasks">
+          <!-- Tasks will be dynamically added here -->
+        </ul>
+      </div>
+    </section>
+    
+    <section id="quick-links-manager" class="component">
+      <div class="quick-links-manager">
+        <div class="link-input-container">
+          <input type="text" class="link-name-input" placeholder="Link name">
+          <input type="url" class="link-url-input" placeholder="https://example.com">
+          <button class="btn-add-link">Add Link</button>
+        </div>
+        <div class="links">
+          <!-- Links will be dynamically added here -->
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <script src="js/app.js"></script>
+  <script src="performance-monitor.js"></script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productivity Dashboard - Test Runner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    .test-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-result {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+    }
+    .test-pass {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .test-fail {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .test-summary {
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .summary-pass {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .summary-fail {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .component-test {
+      margin-bottom: 30px;
+      border-left: 4px solid #007bff;
+      padding-left: 15px;
+    }
+    h2 {
+      color: #333;
+      margin-top: 0;
+    }
+    h3 {
+      color: #666;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Productivity Dashboard - Test Results</h1>
+  <div id="test-results"></div>
+  
+  <!-- Include the main application -->
+  <script src="js/app.js"></script>
+  
+  <script>
+    // Simple test framework
+    class TestRunner {
+      constructor() {
+        this.results = [];
+        this.currentSuite = '';
+      }
+
+      describe(suiteName, testFn) {
+        this.currentSuite = suiteName;
+        console.log(`\n=== ${suiteName} ===`);
+        testFn();
+      }
+
+      test(testName, testFn) {
+        try {
+          testFn();
+          this.results.push({
+            suite: this.currentSuite,
+            name: testName,
+            passed: true,
+            error: null
+          });
+          console.log(`✓ ${testName}`);
+        } catch (error) {
+          this.results.push({
+            suite: this.currentSuite,
+            name: testName,
+            passed: false,
+            error: error.message
+          });
+          console.log(`✗ ${testName}: ${error.message}`);
+        }
+      }
+
+      expect(actual) {
+        return {
+          toBe: (expected) => {
+            if (actual !== expected) {
+              throw new Error(`Expected ${expected}, but got ${actual}`);
+            }
+          },
+          toEqual: (expected) => {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+              throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`);
+            }
+          },
+          toBeTruthy: () => {
+            if (!actual) {
+              throw new Error(`Expected truthy value, but got ${actual}`);
+            }
+          },
+          toBeFalsy: () => {
+            if (actual) {
+              throw new Error(`Expected falsy value, but got ${actual}`);
+            }
+          },
+          toMatch: (regex) => {
+            if (!regex.test(actual)) {
+              throw new Error(`Expected ${actual} to match ${regex}`);
+            }
+          },
+          toHaveLength: (length) => {
+            if (actual.length !== length) {
+              throw new Error(`Expected length ${length}, but got ${actual.length}`);
+            }
+          }
+        };
+      }
+
+      renderResults() {
+        const container = document.getElementById('test-results');
+        const passed = this.results.filter(r => r.passed).length;
+        const total = this.results.length;
+        const failed = total - passed;
+
+        let html = '';
+
+        // Group results by suite
+        const suites = {};
+        this.results.forEach(result => {
+          if (!suites[result.suite]) {
+            suites[result.suite] = [];
+          }
+          suites[result.suite].push(result);
+        });
+
+        // Render each suite
+        Object.keys(suites).forEach(suiteName => {
+          const suiteResults = suites[suiteName];
+          const suitePassed = suiteResults.filter(r => r.passed).length;
+          const suiteTotal = suiteResults.length;
+
+          html += `
+            <div class="component-test">
+              <h2>${suiteName} (${suitePassed}/${suiteTotal} passed)</h2>
+              ${suiteResults.map(result => `
+                <div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                  <strong>${result.passed ? '✓' : '✗'} ${result.name}</strong>
+                  ${result.error ? `<br><small>Error: ${result.error}</small>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `;
+        });
+
+        // Add summary
+        html += `
+          <div class="test-summary ${failed === 0 ? 'summary-pass' : 'summary-fail'}">
+            Test Summary: ${passed}/${total} tests passed
+            ${failed > 0 ? `<br>${failed} tests failed` : '<br>All tests passed! 🎉'}
+          </div>
+        `;
+
+        container.innerHTML = html;
+      }
+    }
+
+    // Initialize test runner
+    const runner = new TestRunner();
+
+    // Core functionality tests
+    runner.describe('LocalStorageService', () => {
+      // Clear localStorage before tests
+      localStorage.clear();
+
+      runner.test('should store and retrieve data', () => {
+        const testData = { test: 'value' };
+        LocalStorageService.set('test-key', testData);
+        const retrieved = LocalStorageService.get('test-key');
+        runner.expect(retrieved).toEqual(testData);
+      });
+
+      runner.test('should return null for missing keys', () => {
+        const result = LocalStorageService.get('non-existent-key');
+        runner.expect(result).toBe(null);
+      });
+
+      runner.test('should handle corrupted JSON gracefully', () => {
+        localStorage.setItem('corrupted-key', 'invalid-json{');
+        const result = LocalStorageService.get('corrupted-key');
+        runner.expect(result).toBe(null);
+      });
+    });
+
+    runner.describe('GreetingDisplay', () => {
+      let container, greeting;
+
+      // Setup
+      container = document.createElement('div');
+      greeting = new GreetingDisplay(container);
+
+      runner.test('should format time correctly', () => {
+        const date = new Date('2024-01-15T09:45:00');
+        const formatted = greeting.formatTime(date);
+        runner.expect(formatted).toBe('09:45 AM');
+      });
+
+      runner.test('should format midnight correctly', () => {
+        const date = new Date('2024-01-15T00:00:00');
+        const formatted = greeting.formatTime(date);
+        runner.expect(formatted).toBe('12:00 AM');
+      });
+
+      runner.test('should format noon correctly', () => {
+        const date = new Date('2024-01-15T12:00:00');
+        const formatted = greeting.formatTime(date);
+        runner.expect(formatted).toBe('12:00 PM');
+      });
+
+      runner.test('should format date correctly', () => {
+        const date = new Date('2024-01-15T12:00:00');
+        const formatted = greeting.formatDate(date);
+        runner.expect(formatted).toBe('Monday, January 15');
+      });
+
+      runner.test('should return correct greeting for morning', () => {
+        runner.expect(greeting.getGreeting(9)).toBe('Good Morning');
+      });
+
+      runner.test('should return correct greeting for afternoon', () => {
+        runner.expect(greeting.getGreeting(14)).toBe('Good Afternoon');
+      });
+
+      runner.test('should return correct greeting for evening', () => {
+        runner.expect(greeting.getGreeting(18)).toBe('Good Evening');
+      });
+
+      runner.test('should return correct greeting for night', () => {
+        runner.expect(greeting.getGreeting(22)).toBe('Good Night');
+      });
+    });
+
+    runner.describe('FocusTimer', () => {
+      let container, timer;
+
+      // Setup
+      container = document.createElement('div');
+      timer = new FocusTimer(container);
+
+      runner.test('should initialize with 1500 seconds', () => {
+        runner.expect(timer.remainingSeconds).toBe(1500);
+      });
+
+      runner.test('should initialize as not running', () => {
+        runner.expect(timer.isRunning).toBe(false);
+      });
+
+      runner.test('should format time correctly', () => {
+        runner.expect(timer.formatTime(1500)).toBe('25:00');
+        runner.expect(timer.formatTime(0)).toBe('00:00');
+        runner.expect(timer.formatTime(60)).toBe('01:00');
+        runner.expect(timer.formatTime(599)).toBe('09:59');
+      });
+
+      runner.test('should reset to initial state', () => {
+        timer.remainingSeconds = 500;
+        timer.isRunning = true;
+        timer.reset();
+        runner.expect(timer.remainingSeconds).toBe(1500);
+        runner.expect(timer.isRunning).toBe(false);
+      });
+    });
+
+    runner.describe('TaskList', () => {
+      let container, taskList;
+
+      // Setup
+      container = document.createElement('div');
+      taskList = new TaskList(container);
+      localStorage.clear();
+
+      runner.test('should initialize with empty tasks array', () => {
+        runner.expect(taskList.tasks).toEqual([]);
+      });
+
+      runner.test('should generate unique IDs', () => {
+        const id1 = taskList.generateId();
+        const id2 = taskList.generateId();
+        runner.expect(id1).toBeTruthy();
+        runner.expect(id2).toBeTruthy();
+        runner.expect(id1 !== id2).toBeTruthy();
+      });
+
+      runner.test('should add valid task', () => {
+        taskList.addTask('Test task');
+        runner.expect(taskList.tasks.length).toBe(1);
+        runner.expect(taskList.tasks[0].text).toBe('Test task');
+        runner.expect(taskList.tasks[0].completed).toBe(false);
+      });
+
+      runner.test('should reject empty task', () => {
+        const initialLength = taskList.tasks.length;
+        taskList.addTask('');
+        runner.expect(taskList.tasks.length).toBe(initialLength);
+      });
+
+      runner.test('should reject whitespace-only task', () => {
+        const initialLength = taskList.tasks.length;
+        taskList.addTask('   ');
+        runner.expect(taskList.tasks.length).toBe(initialLength);
+      });
+
+      runner.test('should toggle task completion', () => {
+        taskList.addTask('Toggle test');
+        const taskId = taskList.tasks[taskList.tasks.length - 1].id;
+        
+        runner.expect(taskList.tasks.find(t => t.id === taskId).completed).toBe(false);
+        taskList.toggleTask(taskId);
+        runner.expect(taskList.tasks.find(t => t.id === taskId).completed).toBe(true);
+        taskList.toggleTask(taskId);
+        runner.expect(taskList.tasks.find(t => t.id === taskId).completed).toBe(false);
+      });
+
+      runner.test('should delete task', () => {
+        taskList.addTask('Delete test');
+        const taskId = taskList.tasks[taskList.tasks.length - 1].id;
+        const initialLength = taskList.tasks.length;
+        
+        taskList.deleteTask(taskId);
+        runner.expect(taskList.tasks.length).toBe(initialLength - 1);
+        runner.expect(taskList.tasks.find(t => t.id === taskId)).toBe(undefined);
+      });
+    });
+
+    runner.describe('QuickLinksManager', () => {
+      let container, manager;
+
+      // Setup
+      container = document.createElement('div');
+      manager = new QuickLinksManager(container);
+      localStorage.clear();
+
+      runner.test('should initialize with empty links array', () => {
+        runner.expect(manager.links).toEqual([]);
+      });
+
+      runner.test('should validate URLs correctly', () => {
+        runner.expect(manager.validateUrl('https://example.com')).toBe(true);
+        runner.expect(manager.validateUrl('http://example.com')).toBe(true);
+        runner.expect(manager.validateUrl('example.com')).toBe(false);
+        runner.expect(manager.validateUrl('ftp://example.com')).toBe(false);
+      });
+
+      runner.test('should add valid link', () => {
+        manager.addLink('Test Link', 'https://example.com');
+        runner.expect(manager.links.length).toBe(1);
+        runner.expect(manager.links[0].name).toBe('Test Link');
+        runner.expect(manager.links[0].url).toBe('https://example.com');
+      });
+
+      runner.test('should reject invalid link', () => {
+        const initialLength = manager.links.length;
+        manager.addLink('', 'https://example.com');
+        runner.expect(manager.links.length).toBe(initialLength);
+        
+        manager.addLink('Test', 'invalid-url');
+        runner.expect(manager.links.length).toBe(initialLength);
+      });
+
+      runner.test('should delete link', () => {
+        manager.addLink('Delete test', 'https://example.com');
+        const linkId = manager.links[manager.links.length - 1].id;
+        const initialLength = manager.links.length;
+        
+        manager.deleteLink(linkId);
+        runner.expect(manager.links.length).toBe(initialLength - 1);
+        runner.expect(manager.links.find(l => l.id === linkId)).toBe(undefined);
+      });
+    });
+
+    runner.describe('App Integration', () => {
+      runner.test('should initialize without errors', () => {
+        // Create test containers
+        const testContainer = document.createElement('div');
+        testContainer.innerHTML = `
+          <div id="test-greeting-display"></div>
+          <div id="test-focus-timer"></div>
+          <div id="test-task-list"></div>
+          <div id="test-quick-links-manager"></div>
+        `;
+        document.body.appendChild(testContainer);
+
+        // Test component initialization
+        const greeting = new GreetingDisplay(document.getElementById('test-greeting-display'));
+        const timer = new FocusTimer(document.getElementById('test-focus-timer'));
+        const taskList = new TaskList(document.getElementById('test-task-list'));
+        const quickLinks = new QuickLinksManager(document.getElementById('test-quick-links-manager'));
+
+        // Should not throw errors
+        greeting.init();
+        timer.init();
+        taskList.init();
+        quickLinks.init();
+
+        // Cleanup
+        greeting.destroy();
+        timer.destroy();
+        taskList.destroy();
+        quickLinks.destroy();
+        document.body.removeChild(testContainer);
+
+        runner.expect(true).toBe(true); // Test passed if no errors thrown
+      });
+    });
+
+    // Run tests and display results
+    setTimeout(() => {
+      runner.renderResults();
+    }, 100);
+  </script>
+</body>
+</html>

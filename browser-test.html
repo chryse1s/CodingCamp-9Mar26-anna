@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Compatibility Test - Productivity Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .test-header {
+      background: #f8f9fa;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: 2px solid #dee2e6;
+    }
+    .test-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .test-item {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+    .test-controls {
+      margin: 15px 0;
+    }
+    .test-controls button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-test {
+      background: #007bff;
+      color: white;
+    }
+    .btn-clear {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-copy {
+      background: #28a745;
+      color: white;
+    }
+    .test-results {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-header">
+    <h1>🌐 Browser Compatibility Test</h1>
+    <p>This page tests the Productivity Dashboard compatibility across different browsers.</p>
+    
+    <div class="test-info">
+      <div class="test-item">
+        <strong>Browser:</strong> <span id="browser-info">Loading...</span>
+      </div>
+      <div class="test-item">
+        <strong>User Agent:</strong> <span id="user-agent">Loading...</span>
+      </div>
+      <div class="test-item">
+        <strong>Screen:</strong> <span id="screen-info">Loading...</span>
+      </div>
+      <div class="test-item">
+        <strong>Local Storage:</strong> <span id="storage-info">Testing...</span>
+      </div>
+    </div>
+    
+    <div class="test-controls">
+      <button class="btn-test" onclick="runCompatibilityTest()">Run Compatibility Test</button>
+      <button class="btn-clear" onclick="clearResults()">Clear Results</button>
+      <button class="btn-copy" onclick="copyResults()">Copy Results</button>
+    </div>
+    
+    <div id="test-output" class="test-results" style="display: none;"></div>
+  </div>
+
+  <main>
+    <section id="greeting-display" class="component">
+      <!-- Greeting Display Component -->
+    </section>
+    
+    <section id="focus-timer" class="component">
+      <!-- Focus Timer Component -->
+    </section>
+    
+    <section id="task-list" class="component">
+      <!-- Task List Component -->
+    </section>
+    
+    <section id="quick-links-manager" class="component">
+      <!-- Quick Links Manager Component -->
+    </section>
+  </main>
+  
+  <script src="js/app.js"></script>
+  <script src="browser-compatibility-test.js"></script>
+  <script>
+    // Initialize browser info
+    function updateBrowserInfo() {
+      const ua = navigator.userAgent;
+      let browserName = 'Unknown';
+      
+      if (ua.includes('Chrome') && !ua.includes('Edg')) {
+        browserName = 'Chrome';
+      } else if (ua.includes('Firefox')) {
+        browserName = 'Firefox';
+      } else if (ua.includes('Edg')) {
+        browserName = 'Edge';
+      } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+        browserName = 'Safari';
+      }
+      
+      document.getElementById('browser-info').textContent = browserName;
+      document.getElementById('user-agent').textContent = ua;
+      document.getElementById('screen-info').textContent = `${screen.width}x${screen.height}`;
+      
+      // Test Local Storage
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        document.getElementById('storage-info').textContent = '✅ Available';
+      } catch (e) {
+        document.getElementById('storage-info').textContent = '❌ Not Available';
+      }
+    }
+    
+    // Run compatibility test
+    async function runCompatibilityTest() {
+      const output = document.getElementById('test-output');
+      output.style.display = 'block';
+      output.textContent = 'Running compatibility tests...\n\n';
+      
+      // Capture console output
+      const originalLog = console.log;
+      const originalError = console.error;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        logOutput += args.join(' ') + '\n';
+        originalLog.apply(console, args);
+      };
+      
+      console.error = (...args) => {
+        logOutput += 'ERROR: ' + args.join(' ') + '\n';
+        originalError.apply(console, args);
+      };
+      
+      try {
+        await runBrowserCompatibilityTests();
+        
+        // Add manual test instructions
+        logOutput += '\n' + '='.repeat(50) + '\n';
+        logOutput += 'MANUAL TESTING CHECKLIST:\n';
+        logOutput += '='.repeat(50) + '\n';
+        logOutput += '1. ✓ Verify greeting display shows current time\n';
+        logOutput += '2. ✓ Verify timer can start/stop/reset\n';
+        logOutput += '3. ✓ Add a task and verify it appears\n';
+        logOutput += '4. ✓ Toggle task completion\n';
+        logOutput += '5. ✓ Add a quick link and verify it works\n';
+        logOutput += '6. ✓ Refresh page and verify data persists\n';
+        logOutput += '\nIf all automated tests pass and manual tests work,\n';
+        logOutput += 'this browser is compatible with the Productivity Dashboard.\n';
+        
+      } catch (error) {
+        logOutput += `\nFATAL ERROR: ${error.message}\n`;
+      }
+      
+      // Restore console
+      console.log = originalLog;
+      console.error = originalError;
+      
+      output.textContent = logOutput;
+    }
+    
+    // Clear results
+    function clearResults() {
+      const output = document.getElementById('test-output');
+      output.style.display = 'none';
+      output.textContent = '';
+    }
+    
+    // Copy results to clipboard
+    function copyResults() {
+      const output = document.getElementById('test-output');
+      if (output.textContent) {
+        navigator.clipboard.writeText(output.textContent).then(() => {
+          alert('Test results copied to clipboard!');
+        }).catch(() => {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = output.textContent;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          alert('Test results copied to clipboard!');
+        });
+      } else {
+        alert('No test results to copy. Run the test first.');
+      }
+    }
+    
+    // Initialize on load
+    window.addEventListener('load', () => {
+      updateBrowserInfo();
+      
+      // Auto-run test after components initialize
+      setTimeout(() => {
+        console.log('🚀 Auto-running compatibility test...');
+        runCompatibilityTest();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
